@@ -1,10 +1,8 @@
 import "reflect-metadata";
 import LogFactory from "./log-factory.class";
-import LogDefault from "./log-default.class";
 import BeanFactory from "./bean-factory.class";
 
 function onClass<T extends { new (...args: any[]): {} }>(constructor: T) {
-  console.log("decorator onClass: " + constructor.name);
   return class extends constructor {
     constructor(...args: any[]) {
       super(...args);
