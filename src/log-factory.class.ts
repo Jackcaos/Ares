@@ -1,3 +1,3 @@
 export default abstract class LogFactory {
-  abstract log(message: any, ...optionalParams: any[]): void;
+  abstract info(message: any, ...optionalParams: any[]): void;
 }

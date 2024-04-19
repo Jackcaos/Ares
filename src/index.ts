@@ -15,8 +15,8 @@ function Inject(target: any, propertyName: string) {
   const type = Reflect.getMetadata("design:type", target, propertyName);
   Object.defineProperty(target, propertyName, {
     get: function injectClass() {
-      const beanObject = ClassFactory.getClass(type);
-      return beanObject();
+      const originalClass = ClassFactory.getClass(type);
+      return originalClass();
     },
   });
 }
