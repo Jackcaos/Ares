@@ -1,8 +1,8 @@
-import { bean } from "./index";
+import { Provide } from "./index";
 import LogFactory from "./log-factory.class";
 
 export default class LogDefault implements LogFactory {
-  @bean
+  @Provide
   createLogger(): LogFactory {
     return new LogDefault();
   }

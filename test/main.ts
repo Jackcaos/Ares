@@ -1,16 +1,11 @@
-import * as walkSync from "walk-sync";
+import { App, Inject } from "../src";
+import Logger from "../src/log-factory.class";
 
-(async () => {
-  const srcDir = process.cwd() + "/src";
-  const srcPaths = walkSync(srcDir, { globs: ["**/*.ts"] });
-  for (const p of srcPaths) {
-    await import(srcDir + "/" + p);
-  }
+@App
+class Main {
+  @Inject public logger: Logger;
 
-  const testDir = process.cwd() + "/test";
-  const testPaths = walkSync(testDir, { globs: ["**/*.ts"] });
-  for (const p of testPaths) {
-    await import(testDir + "/" + p);
+  public main() {
+    this.logger.log("this is start");
   }
-  console.log("Main file running...");
-})();
+}

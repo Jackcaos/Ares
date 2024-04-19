@@ -1,4 +1,4 @@
-import { bean } from "../src";
+import { Provide } from "../src";
 import * as tracer from "tracer";
 import LogFactory from "../src/log-factory.class";
 
@@ -12,7 +12,7 @@ export default class CustomLog extends LogFactory {
     },
   });
 
-  @bean
+  @Provide
   public createLog(): LogFactory {
     return new CustomLog();
   }
