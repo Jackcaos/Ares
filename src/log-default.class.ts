@@ -1,7 +1,6 @@
 import * as winston from "winston";
-// import { combine, timestamp, json } from "winston";
 import { Provide } from "./index";
-import LogFactory from "./log-factory.class";
+import LogFactory from "./factory/log-factory.class";
 
 export default class LogDefault implements LogFactory {
   private logger = winston.createLogger({
@@ -24,7 +23,23 @@ export default class LogDefault implements LogFactory {
     return new LogDefault();
   }
 
-  info(message: any, ...optionalParams: any[]): any {
-    this.logger.info(message);
+  info(...optionalParams: any[]): any {
+    this.logger.info(this.combineArgs(optionalParams));
+  }
+
+  private combineArgs(args: Array<any>) {
+    return args.reduce((str, arg) => {
+      if (arg === null) {
+        str += "null ";
+      } else if (arg === undefined) {
+        str += "undefined ";
+      } else if (typeof arg === "object") {
+        str += JSON.stringify(arg) + " ";
+      } else {
+        // eslint-disable-next-line prettier/prettier
+        str += arg.toString() + " ";
+      }
+      return str;
+    }, "");
   }
 }

@@ -1,7 +1,7 @@
 import "reflect-metadata";
-import App from "./app.decorator";
-import LogFactory from "./log-factory.class";
-import ClassFactory from "./class-factory.class";
+import { App } from "./app.decorator";
+import LogFactory from "./factory/log-factory.class";
+import ClassFactory from "./factory/class-factory.class";
 
 function onClass<T extends { new (...args: any[]): {} }>(constructor: T) {
   return class extends constructor {

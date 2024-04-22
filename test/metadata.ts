@@ -10,9 +10,9 @@
 //   }
 // }
 
-// const obj = new FirstClass();
+// const obj = new SecondClass();
 
-// console.log("FirstClass对象调用getName()取得装饰器赋值：", obj.getName());
+// // console.log("FirstClass对象调用getName()取得装饰器赋值：", obj.getName());
 
 // // 类装饰器
 // function atClass(target: any) {
@@ -90,3 +90,4 @@
 //     console.log("参数装饰器有参数，参数值：", args.join(","));
 //   };
 // }
+// 定义一个类装饰器

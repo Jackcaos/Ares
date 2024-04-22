@@ -1,7 +1,7 @@
 import * as express from "express";
-import { Provide } from "./index";
+import { Provide } from "../index";
 import { loadRouter } from "./route-mapping.decorator";
-import ServerFactory from "./server-factory.class";
+import ServerFactory from "../factory/server-factory.class";
 
 export default class ExpressServer extends ServerFactory {
   public static customMiddleware = [];

@@ -18,5 +18,7 @@ module.exports = {
     "@typescript-eslint/ban-types": "off",
     "no-console": [0],
     "@typescript-eslint/no-require-imports": [0],
+    "prefer-spread": "off",
+    // "prettier/prettier": [0],
   },
 };
