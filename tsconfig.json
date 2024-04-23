@@ -12,7 +12,7 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "typeRoots": [
-      "typings/*.d.ts",
+      "test/typings",
       "node_modules/@types"
     ],
   },

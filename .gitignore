@@ -6,7 +6,6 @@ yarn-error.log*
 lerna-debug.log*
 node_modules/
 jspm_packages/
-typings/
 *.tsbuildinfo
 .npm
 .eslintcache

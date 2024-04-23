@@ -13,7 +13,6 @@ export default class User {
 
   @Get("/")
   public getUser(req: Request, res: Response, @reqQuery("aaa") aaa: number) {
-    // req.session.key = req.query;
     this.logger.info("req", ["123123"], req.query, aaa);
     this.logger.info("serverConfig", this.serverConfig.port);
     res.cookie("name", "zzz");
