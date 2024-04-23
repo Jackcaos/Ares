@@ -4,7 +4,7 @@ import Logger from "../src/factory/log-factory.class";
 import { Get, reqQuery } from "../src/web/route-mapping.decorator";
 import { Controller } from "../src/app.decorator";
 
-@Controller()
+@Controller("/aaa")
 export default class User {
   @Inject private logger: Logger;
 

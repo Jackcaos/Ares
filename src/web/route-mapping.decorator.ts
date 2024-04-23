@@ -64,9 +64,13 @@ function loadRouter(app: Application) {
   for (const methodKey in methodArr) {
     const method = methodArr[methodKey];
     const routerMapFunc = routerMapper[method];
-    for (const router in routerMapFunc) {
-      app[method](router, (req: Request, res: Response, next: NextFunction) =>
-        routerMapFunc[router].invoker(req, res, next),
+    for (const route in routerMapFunc) {
+      const controller = getController(routerMapFunc[route].constructor);
+      const prefix = controller.prefix;
+      const realRoute = prefix === "/" ? route : prefix + route;
+      console.log("realRoute", realRoute);
+      app[method](realRoute, (req: Request, res: Response, next: NextFunction) =>
+        routerMapFunc[route].invoker(req, res, next),
       );
     }
   }
@@ -74,11 +78,9 @@ function loadRouter(app: Application) {
 
 function mapperFunction(method: EMethod, path: string) {
   return (target: any, propertyKey: string) => {
-    console.log(target.constructor);
-    // const prefix = originalController.prefix === "/" ? "" : originalController.prefix;
-    // const realPath = prefix + path;
     routerMapper[method][path] = {
       path: path,
+      constructor: target.constructor,
       invoker: async (req, res, next) => {
         const originalController = getController(target.constructor);
         const component = originalController.constructor;
