@@ -7,7 +7,6 @@ class Main {
   @Inject private server: ServerFactory;
 
   @Inject public logger: Logger;
-
   public main() {
     this.server.start(8080);
     this.logger.info("server start");

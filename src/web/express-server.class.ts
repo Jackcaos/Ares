@@ -1,4 +1,5 @@
 import * as express from "express";
+import * as cookieParser from "cookie-parser";
 import { Provide } from "../index";
 import { loadRouter } from "./route-mapping.decorator";
 import ServerFactory from "../factory/server-factory.class";

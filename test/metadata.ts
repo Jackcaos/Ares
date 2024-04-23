@@ -24,9 +24,9 @@
 
 // // 类装饰器，带参数
 // function atClassWithArgs(...args: any[]) {
-//   return function(target: any) {
-//     console.log("类装饰器有参数，参数值：", args.join(","));
-//   };
+// return function(target: any) {
+//   console.log("类装饰器有参数，参数值：", args.join(","));
+// };
 // }
 
 // // 方法装饰器

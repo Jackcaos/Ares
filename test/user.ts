@@ -1,21 +1,28 @@
 import { Request, Response } from "express";
-import { Inject } from "../src";
+import { Inject, Config } from "../src";
 import Logger from "../src/factory/log-factory.class";
-import { Get, reqQuery } from "../src/web/route-mapping.decorator";
+import { Get, reqQuery, before } from "../src/web/route-mapping.decorator";
 import { Controller } from "../src/app.decorator";
+import { IServerConfig } from "../src/interface/IConfig";
 
-@Controller("/aaa")
+@Controller("/user")
 export default class User {
   @Inject private logger: Logger;
 
-  @Get("/user")
+  @Config("server") private serverConfig: IServerConfig;
+
+  @Get("/")
   public getUser(req: Request, res: Response, @reqQuery("aaa") aaa: number) {
     this.logger.info("req", ["123123"], req.query, aaa);
+    this.logger.info("serverConfig", this.serverConfig.port);
+    res.cookie("name", "zzz");
     return "hello world";
   }
 
   @Get("/login")
   public postUser(req: Request, res: Response) {
-    return "login!";
+    console.log("req.cookies", req.cookies);
+    const cookieName = req.cookies;
+    return "getCookie: " + cookieName;
   }
 }

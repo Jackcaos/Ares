@@ -20,6 +20,7 @@ enum EMethod {
 }
 
 const routerParams = {};
+const totalOriginalMethodParams = {};
 
 function Get(path: string) {
   return mapperFunction(EMethod.GET, path);
@@ -60,6 +61,13 @@ function reqParam(paramsName?: string) {
   };
 }
 
+function reqHeaders(headerKey?: string) {
+  return (target: any, propertyKey: string, parameterIndex: number) => {
+    const key = [target.constructor.name, propertyKey, parameterIndex].join(".");
+    routerParams[key] = (req, res, next) => (headerKey ? req.headers[headerKey] : req.headers);
+  };
+}
+
 function loadRouter(app: Application) {
   for (const methodKey in methodArr) {
     const method = methodArr[methodKey];
@@ -85,7 +93,12 @@ function mapperFunction(method: EMethod, path: string) {
         const originalController = getController(target.constructor);
         const component = originalController.constructor;
         try {
-          const totalParams = component[propertyKey].length;
+          let totalParams = component[propertyKey].length;
+          totalParams = Math.max(
+            totalParams,
+            totalOriginalMethodParams[[target.constructor.name, propertyKey].join(".")] || 0,
+          );
+          console.log("totalParams", totalParams, component[propertyKey]);
           // express 回调函数的常规参数
           const args = [req, res, next];
           if (totalParams > 0) {
@@ -110,4 +123,50 @@ function mapperFunction(method: EMethod, path: string) {
   };
 }
 
-export { loadRouter, Get, Post, Put, Del, All, reqBody, reqQuery, reqParam };
+function before(controller: any, method?: string) {
+  return (aopTarget: any, propertyKey: string) => {
+    const constructor = getController(controller).constructor;
+    const beforeAction = aopTarget[propertyKey];
+    const targetMethod = constructor[method];
+    const uniqueKey = [controller.name, method].join(".");
+    totalOriginalMethodParams[uniqueKey] = targetMethod.length;
+    Object.assign(constructor, {
+      [method]: (...args) => {
+        beforeAction.apply(aopTarget, args);
+        return targetMethod.apply(constructor, args);
+      },
+    });
+  };
+}
+
+function after(controller: any, method?: string) {
+  return (aopTarget: any, propertyKey: string) => {
+    const constructor = getController(controller).constructor;
+    const afterAction = aopTarget[propertyKey];
+    const targetMethod = constructor[method];
+    const uniqueKey = [controller.name, method].join(".");
+    totalOriginalMethodParams[uniqueKey] = targetMethod.length;
+    Object.assign(constructor, {
+      [method]: (...args) => {
+        const res = targetMethod.apply(constructor, args);
+        afterAction.apply(aopTarget, args);
+        return res;
+      },
+    });
+  };
+}
+
+export {
+  loadRouter,
+  Get,
+  Post,
+  Put,
+  Del,
+  All,
+  reqBody,
+  reqQuery,
+  reqParam,
+  reqHeaders,
+  before,
+  after,
+};

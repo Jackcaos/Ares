@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { App } from "./app.decorator";
+import { App, getGlobalConfig } from "./app.decorator";
 import LogFactory from "./factory/log-factory.class";
 import ClassFactory from "./factory/class-factory.class";
 
@@ -33,4 +33,13 @@ function Logger(message?: any, ...optionalParams: any[]) {
   logBeanInstance.log(message, ...optionalParams);
 }
 
-export { App, Provide, Inject, onClass, Logger };
+function Config(configKey?: string) {
+  return (target: any, propertyKey: string) => {
+    const configVal = getGlobalConfig()[configKey];
+    Object.assign(target, {
+      [propertyKey]: configVal,
+    });
+  };
+}
+
+export { App, Provide, Inject, onClass, Logger, Config };

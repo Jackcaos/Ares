@@ -1,15 +1,11 @@
-import { Request, Response } from "express";
-import { Inject } from "../src";
-import Logger from "../src/factory/log-factory.class";
-import { Get, reqQuery } from "../src/web/route-mapping.decorator";
-import { Controller } from "../src/app.decorator";
+import { after } from "../src/web/route-mapping.decorator";
+import User from "./user";
 
-@Controller("/tttt")
-export default class Test {
-  @Inject private logger: Logger;
-
-  @Get("/test")
-  public getUser(req: Request, res: Response) {
-    return "test";
+// @Controller("/")
+class Aop {
+  @after(User, "getUser")
+  public getAop(aaa: string) {
+    console.log("get aop after");
+    // return "aaa";
   }
 }

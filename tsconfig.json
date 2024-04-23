@@ -6,6 +6,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "target": "ES2015",
     "sourceMap": true,
     "outDir": "./dist",
