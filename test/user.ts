@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Inject, Config } from "../src";
 import Logger from "../src/factory/log-factory.class";
-import { Get, reqQuery, before } from "../src/web/route-mapping.decorator";
+import { Get, reqQuery } from "../src/web/route-mapping.decorator";
 import { Controller } from "../src/app.decorator";
 import { IServerConfig } from "../src/interface/IConfig";
 
@@ -13,6 +13,7 @@ export default class User {
 
   @Get("/")
   public getUser(req: Request, res: Response, @reqQuery("aaa") aaa: number) {
+    // req.session.key = req.query;
     this.logger.info("req", ["123123"], req.query, aaa);
     this.logger.info("serverConfig", this.serverConfig.port);
     res.cookie("name", "zzz");
@@ -23,6 +24,8 @@ export default class User {
   public postUser(req: Request, res: Response) {
     console.log("req.cookies", req.cookies);
     const cookieName = req.cookies;
-    return "getCookie: " + cookieName;
+    return {
+      cookieName,
+    };
   }
 }

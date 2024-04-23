@@ -3,7 +3,16 @@
     "host": "127.0.0.1",
     "port": 8080
   },
-  "data": {
-    "a": "111"
+  "cookie": {
+    "secrets": "aaaa"
+  },
+  "session": {
+    "name": "MW_SESS",
+    "resave": true,
+    "saveUninitialized": true,
+    "cookie": {
+      "maxAge": 7200000,
+      "httpOnly": true
+    }
   }
 }
