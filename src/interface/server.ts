@@ -44,8 +44,6 @@ interface IRouteOptions {
   path: string;
   // 路由回调
   callback?: (req: Request, res: Response, next: NextFunction) => any;
-  // 参数数量
-  paramsCount?: number;
   // 路由级别的中间件
   middlewares?: IMiddleware[];
 }

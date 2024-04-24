@@ -2,22 +2,11 @@ import { Application, Request, Response, NextFunction } from "express";
 import ClassFactory from "../factory/class-factory.class";
 import { EMethod, IRouteOptions, IController, IMiddleware } from "../interface/server";
 
-const routerMapper = {
-  get: {},
-  post: {},
-  put: {},
-  del: {},
-  all: {},
-};
-
 const defaultRouteOptions: Partial<IRouteOptions> = {
+  path: "/",
   method: EMethod["GET"],
-  paramsCount: 0,
   middlewares: [],
 };
-
-const routerParams = {};
-const totalOriginalMethodParams = {};
 
 function Get(path: string) {
   return createFunctionMapping(EMethod.GET, path);
@@ -120,108 +109,94 @@ function createFunctionMapping(method: EMethod, path: string, middlewares?: IMid
 
 function createCallback(metadata, propertyKey: string, uniqueKey: string) {
   return (req, res, next) => {
-    const args = [req, res, next];
     const metaClass = ClassFactory.getMetaClassData(metadata.constructor) as IController;
     const metaFunc = metadata[propertyKey];
-    const paramsCount = metaClass.router[uniqueKey].paramsCount || metaFunc.length;
 
-    for (let i = 0; i < paramsCount; i++) {
-      const key = `${uniqueKey}.${i}`;
-      if (metaClass.params[key]) {
-        args[i] = metaClass.params[key](req, res, next);
-      }
-    }
-    const result = metaFunc.apply(metadata, [...args]);
-
-    if (typeof result === "object") {
-      return res.json(result);
-    } else {
-      return res.send(result);
-    }
+    const args = requestHandleParams(metadata, propertyKey, uniqueKey, req, res, next);
+    const result = metaFunc.apply(metaClass.constructor, [...args]);
+    responseHandle(res, result);
   };
 }
 
-// function requestMapping(method: EMethod, path: string) {
-//   return (target: any, propertyKey: string) => {
-//     routerMapper[method][path] = {
-//       path: path,
-//       constructor: target.constructor,
-//       invoker: async (req, res, next) => {
-//         const originalController = ClassFactory.getMetaClassData(target.constructor);
-//         const component = originalController.constructor;
-//         try {
-//           let totalParams = component[propertyKey].length;
-//           totalParams = Math.max(
-//             totalParams,
-//             totalOriginalMethodParams[[target.constructor.name, propertyKey].join(".")] || 0,
-//           );
-//           console.log("totalParams", totalParams, component[propertyKey]);
-//           // express 回调函数的常规参数
-//           const args = [req, res, next];
-//           if (totalParams > 0) {
-//             for (let index = 0; index < totalParams; index++) {
-//               const routerParamsKey = [target.constructor.name, propertyKey, index].join(".");
-//               if (routerParams[routerParamsKey]) {
-//                 args[index] = routerParams[routerParamsKey](req, res, next);
-//               }
-//             }
-//           }
-//           const result = component[propertyKey].apply(component, [...args]);
-//           if (typeof result === "object") {
-//             return res.json(result);
-//           } else {
-//             return res.send(result);
-//           }
-//         } catch (err) {
-//           next(err);
-//         }
-//       },
-//     };
-//   };
-// }
+function requestHandleParams(
+  metadata: any,
+  propertyKey: string,
+  uniqueKey: string,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): any[] {
+  const args = [req, res, next];
+  const metaClass = ClassFactory.getMetaClassData(metadata.constructor) as IController;
+  const metaFunc = metadata[propertyKey];
+  const paramsCount = metaFunc.length;
+
+  for (let i = 0; i < paramsCount; i++) {
+    const key = `${uniqueKey}.${i}`;
+    if (metaClass.params[key]) {
+      args[i] = metaClass.params[key](req, res, next);
+    }
+  }
+  return args;
+}
+
+function responseHandle(res: Response, result: any) {
+  if (typeof result === "object") {
+    return res.json(result);
+  } else {
+    return res.send(result);
+  }
+}
 
 function before(decoratorClass: any, method?: string) {
   return (metadata: any, propertyKey: string) => {
-    const { constructor: metaClass, name } = ClassFactory.getMetaClassData(decoratorClass);
+    const { constructor: metaClass, name, router } = ClassFactory.getMetaClassData(decoratorClass);
     const uniqueKey = `${name}.${method}`;
 
-    console.log("metaClass", metaClass);
     const beforeAction = metadata[propertyKey];
     const originMethod = metaClass[method];
-    // console.log(decoratorClass, method);
-    const paramsCount = originMethod.length;
-    const decoratorMethod = (...args) => {
-      console.log("12123123");
+
+    const decoratorMethod = (req: Request, res: Response, next: NextFunction) => {
+      const args = requestHandleParams(metaClass, method, uniqueKey, req, res, next);
       beforeAction.apply(metadata, args);
-      return originMethod.apply(metaClass, args);
+      const result = originMethod.apply(metaClass, args);
+      responseHandle(res, result);
     };
+
+    router[uniqueKey].callback = decoratorMethod;
 
     Object.assign(metaClass, {
       router: {
         ...metaClass.router,
         // fixme 改成递归的方式
-        [uniqueKey]: {
-          paramsCount,
-          callback: decoratorMethod,
-        },
+        ...router[uniqueKey],
       },
     });
-    console.log("metaClass", metaClass);
   };
 }
 
-function after(controller: any, method?: string) {
-  return (aopTarget: any, propertyKey: string) => {
-    const constructor = ClassFactory.getMetaClassData(controller).constructor;
-    const afterAction = aopTarget[propertyKey];
-    const targetMethod = constructor[method];
-    const uniqueKey = [controller.name, method].join(".");
-    totalOriginalMethodParams[uniqueKey] = targetMethod.length;
-    Object.assign(constructor, {
-      [method]: (...args) => {
-        const res = targetMethod.apply(constructor, args);
-        afterAction.apply(aopTarget, args);
-        return res;
+function after(decoratorClass: any, method?: string) {
+  return (metadata: any, propertyKey: string) => {
+    const { constructor: metaClass, name, router } = ClassFactory.getMetaClassData(decoratorClass);
+    const uniqueKey = `${name}.${method}`;
+
+    const afterAction = metadata[propertyKey];
+    const originMethod = metaClass[method];
+
+    const decoratorMethod = (req: Request, res: Response, next: NextFunction) => {
+      const args = requestHandleParams(metaClass, method, uniqueKey, req, res, next);
+      const result = originMethod.apply(metaClass, args);
+      afterAction.apply(metadata, args);
+      responseHandle(res, result);
+    };
+
+    router[uniqueKey].callback = decoratorMethod;
+
+    Object.assign(metaClass, {
+      router: {
+        ...metaClass.router,
+        // fixme 改成递归的方式
+        ...router[uniqueKey],
       },
     });
   };
