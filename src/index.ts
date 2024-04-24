@@ -15,7 +15,7 @@ function Inject(target: any, propertyName: string) {
   const type = Reflect.getMetadata("design:type", target, propertyName);
   Object.defineProperty(target, propertyName, {
     get: function injectClass() {
-      const originalClass = ClassFactory.getClass(type);
+      const originalClass = ClassFactory.getMetaFunctionData(type);
       return originalClass();
     },
   });
@@ -23,12 +23,21 @@ function Inject(target: any, propertyName: string) {
 
 function Provide(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
   const returnType = Reflect.getMetadata("design:returntype", target, propertyName);
-  console.log(ClassFactory);
-  ClassFactory.putClass(returnType, target[propertyName]);
+  ClassFactory.putMetaFunctionData(returnType, target[propertyName]);
+}
+
+function Controller(prefix = "/", middlewares?: any[]) {
+  return (target: any) => {
+    ClassFactory.putMetaClassData(target, {
+      constructor: new target(),
+      prefix,
+      middlewares: middlewares ? middlewares : [],
+    });
+  };
 }
 
 function Logger(message?: any, ...optionalParams: any[]) {
-  const logBean = ClassFactory.getClass(LogFactory);
+  const logBean = ClassFactory.getMetaClassData(LogFactory);
   const logBeanInstance = logBean();
   logBeanInstance.log(message, ...optionalParams);
 }
@@ -42,4 +51,4 @@ function Config(configKey?: string) {
   };
 }
 
-export { App, Provide, Inject, onClass, Logger, Config };
+export { App, Controller, Provide, Inject, onClass, Logger, Config };

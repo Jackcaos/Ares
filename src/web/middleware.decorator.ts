@@ -1,10 +1,10 @@
-import ExpressServer from "./express-server.class";
+import ExpressServer from "./express-server";
 
 function Middleware() {
   return (target: any) => {
     const middleware = new target();
-    const middlewareCallback = middleware.use();
-    ExpressServer.setCustomMiddleware(middlewareCallback);
+    const middlewareHandler = middleware.use();
+    ExpressServer.setCustomMiddleware(middlewareHandler);
   };
 }
 

@@ -1,7 +1,6 @@
 import * as walkSync from "walk-sync";
 import * as fs from "fs";
 
-const objectMapper: Map<string, any> = new Map<string, any>();
 let globalConfig = {};
 
 function App<T extends { new (...args: any[]): {} }>(constructor: T) {
@@ -42,25 +41,9 @@ function importConfig() {
       }
     }
   }
-  console.log("globalConfig", globalConfig);
 }
-
-function Controller(prefix = "/", middlewares?: any[]) {
-  return (target) => {
-    objectMapper.set(target.name, {
-      constructor: new target(),
-      prefix,
-      middlewares: middlewares ? middlewares : [],
-    });
-  };
-}
-
-function getController(constructorFunction: any) {
-  return objectMapper.get(constructorFunction.name);
-}
-
 function getGlobalConfig() {
   return globalConfig;
 }
 
-export { App, Controller, getController, getGlobalConfig };
+export { App, getGlobalConfig };

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { Inject, Config } from "../src";
+import { Inject, Config, Provide } from "../src";
 import Logger from "../src/factory/log-factory.class";
 import { Get, reqQuery } from "../src/web/route-mapping.decorator";
-import { Controller } from "../src/app.decorator";
+import { Controller } from "../src";
 import { IServerConfig } from "../src/interface/IConfig";
 
 @Controller("/user")

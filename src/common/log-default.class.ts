@@ -1,6 +1,6 @@
 import * as winston from "winston";
-import { Provide } from "./index";
-import LogFactory from "./factory/log-factory.class";
+import { Provide } from "../index";
+import LogFactory from "../factory/log-factory.class";
 
 export default class LogDefault implements LogFactory {
   private logger = winston.createLogger({
@@ -36,7 +36,6 @@ export default class LogDefault implements LogFactory {
       } else if (typeof arg === "object") {
         str += JSON.stringify(arg) + " ";
       } else {
-        // eslint-disable-next-line prettier/prettier
         str += arg.toString() + " ";
       }
       return str;

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import MiddlewareFactory from "../src/factory/middleware-factory.class";
+import { MiddlewareFactory } from "../src/factory/server-factory.class";
 import { Middleware } from "../src/web/middleware.decorator";
 
 @Middleware()

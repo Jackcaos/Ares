@@ -1,5 +1,5 @@
 import { App, Inject } from "../src";
-import ServerFactory from "../src/factory/server-factory.class";
+import { ServerFactory } from "../src/factory/server-factory.class";
 import Logger from "../src/factory/log-factory.class";
 
 @App

@@ -4,7 +4,7 @@ import * as expressSession from "express-session";
 import { ICookie, ISession } from "../interface/IConfig";
 import { Config, Provide } from "../index";
 import { loadRouter } from "./route-mapping.decorator";
-import ServerFactory from "../factory/server-factory.class";
+import { ServerFactory } from "../factory/server-factory.class";
 
 export default class ExpressServer extends ServerFactory {
   public static customMiddleware = [];
