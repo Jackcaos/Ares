@@ -22,8 +22,8 @@ interface IController {
   middleware?: IMiddleware[];
   // aop回调
   lifecycle?: {
-    before: () => any;
-    after: () => any;
+    before: (...args) => any;
+    after: (...args) => any;
   };
   // 路由回调函数映射
   router?: {
@@ -43,7 +43,7 @@ interface IRouteOptions {
   // 请求路径
   path: string;
   // 路由回调
-  callback: (req: Request, res: Response, next: NextFunction) => any;
+  callback?: (req: Request, res: Response, next: NextFunction) => any;
   // 参数数量
   paramsCount?: number;
   // 路由级别的中间件

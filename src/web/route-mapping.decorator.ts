@@ -10,42 +10,6 @@ const routerMapper = {
   all: {},
 };
 
-// enum EMethod {
-//   "GET" = "get",
-//   "POST" = "post",
-//   "PUT" = "put",
-//   "DEL" = "del",
-//   "ALL" = "all",
-// }
-
-// {
-//   "get": {
-//     "User.getUser": {
-//       totalParams: 3,
-//       params: []
-//     }
-//   }
-// }
-
-// User
-// middleware
-// prefix
-// router
-//  name: User.getUser
-//  path
-//  callback
-//  lifecycle: {
-//    before: {
-
-//    },
-//    after: {
-
-//    }
-// }
-//  method
-//  middleware ?
-//  params
-
 const defaultRouteOptions: Partial<IRouteOptions> = {
   method: EMethod["GET"],
   paramsCount: 0,
@@ -60,19 +24,19 @@ function Get(path: string) {
 }
 
 function Post(path: string) {
-  return requestMapping(EMethod.POST, path);
+  return createFunctionMapping(EMethod.POST, path);
 }
 
 function Put(path: string) {
-  return requestMapping(EMethod.PUT, path);
+  return createFunctionMapping(EMethod.PUT, path);
 }
 
 function Del(path: string) {
-  return requestMapping(EMethod.DEL, path);
+  return createFunctionMapping(EMethod.DEL, path);
 }
 
 function All(path: string) {
-  return requestMapping(EMethod.ALL, path);
+  return createFunctionMapping(EMethod.ALL, path);
 }
 
 function reqBody(property?: string) {
@@ -128,18 +92,6 @@ function loadRouter(app: Application) {
   }
 }
 
-// interface IRouteOptions {
-//   // 唯一key
-//   uniqueKey: string;
-//   // 请求方式
-//   method: EMethod;
-//   // 路由回调
-//   callback: (...args: any[]) => any;
-//   // 参数数量
-//   paramsCount: number;
-//   // 路由级别的中间件
-//   middlewares?: IMiddleware[];
-// }
 function createFunctionMapping(method: EMethod, path: string, middlewares?: IMiddleware[]) {
   return (metadata, propertyKey: string) => {
     // metadata
@@ -189,58 +141,72 @@ function createCallback(metadata, propertyKey: string, uniqueKey: string) {
   };
 }
 
-function requestMapping(method: EMethod, path: string) {
-  return (target: any, propertyKey: string) => {
-    routerMapper[method][path] = {
-      path: path,
-      constructor: target.constructor,
-      invoker: async (req, res, next) => {
-        const originalController = ClassFactory.getMetaClassData(target.constructor);
-        const component = originalController.constructor;
-        try {
-          let totalParams = component[propertyKey].length;
-          totalParams = Math.max(
-            totalParams,
-            totalOriginalMethodParams[[target.constructor.name, propertyKey].join(".")] || 0,
-          );
-          console.log("totalParams", totalParams, component[propertyKey]);
-          // express 回调函数的常规参数
-          const args = [req, res, next];
-          if (totalParams > 0) {
-            for (let index = 0; index < totalParams; index++) {
-              const routerParamsKey = [target.constructor.name, propertyKey, index].join(".");
-              if (routerParams[routerParamsKey]) {
-                args[index] = routerParams[routerParamsKey](req, res, next);
-              }
-            }
-          }
-          const result = component[propertyKey].apply(component, [...args]);
-          if (typeof result === "object") {
-            return res.json(result);
-          } else {
-            return res.send(result);
-          }
-        } catch (err) {
-          next(err);
-        }
-      },
-    };
-  };
-}
+// function requestMapping(method: EMethod, path: string) {
+//   return (target: any, propertyKey: string) => {
+//     routerMapper[method][path] = {
+//       path: path,
+//       constructor: target.constructor,
+//       invoker: async (req, res, next) => {
+//         const originalController = ClassFactory.getMetaClassData(target.constructor);
+//         const component = originalController.constructor;
+//         try {
+//           let totalParams = component[propertyKey].length;
+//           totalParams = Math.max(
+//             totalParams,
+//             totalOriginalMethodParams[[target.constructor.name, propertyKey].join(".")] || 0,
+//           );
+//           console.log("totalParams", totalParams, component[propertyKey]);
+//           // express 回调函数的常规参数
+//           const args = [req, res, next];
+//           if (totalParams > 0) {
+//             for (let index = 0; index < totalParams; index++) {
+//               const routerParamsKey = [target.constructor.name, propertyKey, index].join(".");
+//               if (routerParams[routerParamsKey]) {
+//                 args[index] = routerParams[routerParamsKey](req, res, next);
+//               }
+//             }
+//           }
+//           const result = component[propertyKey].apply(component, [...args]);
+//           if (typeof result === "object") {
+//             return res.json(result);
+//           } else {
+//             return res.send(result);
+//           }
+//         } catch (err) {
+//           next(err);
+//         }
+//       },
+//     };
+//   };
+// }
 
-function before(controller: any, method?: string) {
-  return (aopTarget: any, propertyKey: string) => {
-    const constructor = ClassFactory.getMetaClassData(controller).constructor;
-    const beforeAction = aopTarget[propertyKey];
-    const targetMethod = constructor[method];
-    const uniqueKey = [controller.name, method].join(".");
-    totalOriginalMethodParams[uniqueKey] = targetMethod.length;
-    Object.assign(constructor, {
-      [method]: (...args) => {
-        beforeAction.apply(aopTarget, args);
-        return targetMethod.apply(constructor, args);
+function before(decoratorClass: any, method?: string) {
+  return (metadata: any, propertyKey: string) => {
+    const { constructor: metaClass, name } = ClassFactory.getMetaClassData(decoratorClass);
+    const uniqueKey = `${name}.${method}`;
+
+    console.log("metaClass", metaClass);
+    const beforeAction = metadata[propertyKey];
+    const originMethod = metaClass[method];
+    // console.log(decoratorClass, method);
+    const paramsCount = originMethod.length;
+    const decoratorMethod = (...args) => {
+      console.log("12123123");
+      beforeAction.apply(metadata, args);
+      return originMethod.apply(metaClass, args);
+    };
+
+    Object.assign(metaClass, {
+      router: {
+        ...metaClass.router,
+        // fixme 改成递归的方式
+        [uniqueKey]: {
+          paramsCount,
+          callback: decoratorMethod,
+        },
       },
     });
+    console.log("metaClass", metaClass);
   };
 }
 

@@ -3,13 +3,9 @@ export default class ClassFactory {
   private static functionMapper: Map<string, any> = new Map<string, any>();
 
   public static putMetaClassData(mappingClass: Function, data: { [key: string]: any }) {
-    const metaClassData = this.controllerMapper.get(mappingClass.name);
-    if (metaClassData) {
-      console.log(Object.assign(metaClassData, data));
-      this.controllerMapper.set(mappingClass.name, Object.assign(metaClassData, data));
-    } else {
-      this.controllerMapper.set(mappingClass.name, data);
-    }
+    const previousData = this.controllerMapper.get(mappingClass.name);
+    data = previousData ? Object.assign(previousData, data) : data;
+    this.controllerMapper.set(mappingClass.name, data);
   }
 
   public static putMetaFunctionData(mappingFunction: Function, originalFunction: Function) {
@@ -17,8 +13,8 @@ export default class ClassFactory {
   }
 
   public static getMetaClassData(mappingClass: Function) {
-    const metaClassData = this.controllerMapper.get(mappingClass.name);
-    if (metaClassData === undefined) {
+    const previousData = this.controllerMapper.get(mappingClass.name);
+    if (previousData === undefined) {
       this.controllerMapper.set(mappingClass.name, {
         name: mappingClass.name,
       });
