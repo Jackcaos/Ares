@@ -1,5 +1,5 @@
 import { Application, Request, Response, NextFunction } from "express";
-import ClassFactory from "../factory/class-factory.class";
+import ControllerFactory from "../factory/controller-factory.class";
 import { EMethod, IRouteOptions, IController, IMiddleware } from "../interface/server";
 
 const defaultRouteOptions: Partial<IRouteOptions> = {
@@ -57,7 +57,7 @@ function reqHeaders(property?: string) {
 }
 
 function createParamMapping(metadata, propertyKey: string, parameterIndex: number, callback: any) {
-  const metaClass = ClassFactory.getMetaClassData(metadata.constructor) as IController;
+  const metaClass = ControllerFactory.getMetaClassData(metadata.constructor) as IController;
   const uniqueKey = `${metaClass.name}.${propertyKey}.${parameterIndex}`;
   Object.assign(metaClass, {
     params: {
@@ -67,7 +67,7 @@ function createParamMapping(metadata, propertyKey: string, parameterIndex: numbe
 }
 
 function loadRouter(app: Application) {
-  const allMetaClassData = ClassFactory.getAllMetaClassData();
+  const allMetaClassData = ControllerFactory.getAllMetaClassData();
   for (const [, val] of allMetaClassData) {
     const prefix = val.prefix === "/" ? "" : val.prefix;
     const routers = val.router;
@@ -84,7 +84,7 @@ function loadRouter(app: Application) {
 function createFunctionMapping(method: EMethod, path: string, middlewares?: IMiddleware[]) {
   return (metadata, propertyKey: string) => {
     // metadata
-    const metaClass: IController = ClassFactory.getMetaClassData(metadata.constructor);
+    const metaClass: IController = ControllerFactory.getMetaClassData(metadata.constructor);
 
     const uniqueKey = `${metaClass.name}.${propertyKey}`;
 
@@ -109,7 +109,7 @@ function createFunctionMapping(method: EMethod, path: string, middlewares?: IMid
 
 function createCallback(metadata, propertyKey: string, uniqueKey: string) {
   return (req, res, next) => {
-    const metaClass = ClassFactory.getMetaClassData(metadata.constructor) as IController;
+    const metaClass = ControllerFactory.getMetaClassData(metadata.constructor) as IController;
     const metaFunc = metadata[propertyKey];
 
     const args = requestHandleParams(metadata, propertyKey, uniqueKey, req, res, next);
@@ -127,7 +127,7 @@ function requestHandleParams(
   next: NextFunction,
 ): any[] {
   const args = [req, res, next];
-  const metaClass = ClassFactory.getMetaClassData(metadata.constructor) as IController;
+  const metaClass = ControllerFactory.getMetaClassData(metadata.constructor) as IController;
   const metaFunc = metadata[propertyKey];
   const paramsCount = metaFunc.length;
 
@@ -150,7 +150,9 @@ function responseHandle(res: Response, result: any) {
 
 function before(decoratorClass: any, method?: string) {
   return (metadata: any, propertyKey: string) => {
-    const { constructor: metaClass, name, router } = ClassFactory.getMetaClassData(decoratorClass);
+    const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
+      decoratorClass,
+    );
     const uniqueKey = `${name}.${method}`;
 
     const beforeAction = metadata[propertyKey];
@@ -177,7 +179,9 @@ function before(decoratorClass: any, method?: string) {
 
 function after(decoratorClass: any, method?: string) {
   return (metadata: any, propertyKey: string) => {
-    const { constructor: metaClass, name, router } = ClassFactory.getMetaClassData(decoratorClass);
+    const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
+      decoratorClass,
+    );
     const uniqueKey = `${name}.${method}`;
 
     const afterAction = metadata[propertyKey];

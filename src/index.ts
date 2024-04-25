@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { App, getGlobalConfig } from "./app.decorator";
 import LogFactory from "./factory/log-factory.class";
 import ClassFactory from "./factory/class-factory.class";
+import ControllerFactory from "./factory/controller-factory.class";
 
 function onClass<T extends { new (...args: any[]): {} }>(constructor: T) {
   return class extends constructor {
@@ -28,7 +29,7 @@ function Provide(target: any, propertyName: string, descriptor: TypedPropertyDes
 
 function Controller(prefix = "/", middlewares?: any[]) {
   return (target: any) => {
-    ClassFactory.putMetaClassData(target, {
+    ControllerFactory.putMetaClassData(target, {
       constructor: new target(),
       prefix,
       middlewares: middlewares ? middlewares : [],
@@ -37,7 +38,7 @@ function Controller(prefix = "/", middlewares?: any[]) {
 }
 
 function Logger(message?: any, ...optionalParams: any[]) {
-  const logBean = ClassFactory.getMetaClassData(LogFactory);
+  const logBean = ControllerFactory.getMetaClassData(LogFactory);
   const logBeanInstance = logBean();
   logBeanInstance.log(message, ...optionalParams);
 }
