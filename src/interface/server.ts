@@ -15,7 +15,7 @@ interface IController {
   // 控制类器
   name: string;
   // 构造函数
-  constructor: Function;
+  targetClass: any;
   // 路由统一前缀
   prefix: string;
   // 控制器层面的中间件

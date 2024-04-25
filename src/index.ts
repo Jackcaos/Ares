@@ -30,7 +30,7 @@ function Provide(target: any, propertyName: string, descriptor: TypedPropertyDes
 function Controller(prefix = "/", middlewares?: any[]) {
   return (target: any) => {
     ControllerFactory.putMetaClassData(target, {
-      constructor: new target(),
+      targetClass: new target(),
       prefix,
       middlewares: middlewares ? middlewares : [],
     });

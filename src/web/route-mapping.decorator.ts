@@ -153,10 +153,10 @@ function responseHandle(res: Response, result: any) {
   }
 }
 
-function before(decoratorClass: any, method?: string) {
+function before(decoratedClass: any, method?: string) {
   return (targetClass: any, propertyKey: string) => {
-    const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
-      decoratorClass,
+    const { targetClass: metaClass, name, router } = ControllerFactory.getMetaClassData(
+      decoratedClass,
     );
     const uniqueKey = `${name}.${method}`;
 
@@ -182,10 +182,10 @@ function before(decoratorClass: any, method?: string) {
   };
 }
 
-function after(decoratorClass: any, method?: string) {
+function after(decoratedClass: any, method?: string) {
   return (targetClass: any, propertyKey: string) => {
     const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
-      decoratorClass,
+      decoratedClass,
     );
     const uniqueKey = `${name}.${method}`;
 
