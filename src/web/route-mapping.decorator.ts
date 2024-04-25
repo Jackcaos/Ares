@@ -29,35 +29,40 @@ function All(path: string) {
 }
 
 function reqBody(property?: string) {
-  return (metadata: any, propertyKey: string, parameterIndex: number) => {
+  return (targetFunction: any, propertyKey: string, parameterIndex: number) => {
     const callback = (req, res, next) => (property ? req.body[property] : req.body);
-    createParamMapping(metadata, propertyKey, parameterIndex, callback);
+    createParamMapping(targetFunction, propertyKey, parameterIndex, callback);
   };
 }
 
 function reqQuery(property?: string) {
-  return (metadata: any, propertyKey: string, parameterIndex: number) => {
+  return (targetFunction: any, propertyKey: string, parameterIndex: number) => {
     const callback = (req, res, next) => (property ? req.query[property] : req.query);
-    createParamMapping(metadata, propertyKey, parameterIndex, callback);
+    createParamMapping(targetFunction, propertyKey, parameterIndex, callback);
   };
 }
 
 function reqParam(property?: string) {
-  return (metadata: any, propertyKey: string, parameterIndex: number) => {
+  return (targetFunction: any, propertyKey: string, parameterIndex: number) => {
     const callback = (req, res, next) => (property ? req.params[property] : req.params);
-    createParamMapping(metadata, propertyKey, parameterIndex, callback);
+    createParamMapping(targetFunction, propertyKey, parameterIndex, callback);
   };
 }
 
 function reqHeaders(property?: string) {
-  return (metadata: any, propertyKey: string, parameterIndex: number) => {
+  return (targetFunction: any, propertyKey: string, parameterIndex: number) => {
     const callback = (req, res, next) => (property ? req.headers[property] : req.headers);
-    createParamMapping(metadata, propertyKey, parameterIndex, callback);
+    createParamMapping(targetFunction, propertyKey, parameterIndex, callback);
   };
 }
 
-function createParamMapping(metadata, propertyKey: string, parameterIndex: number, callback: any) {
-  const metaClass = ControllerFactory.getMetaClassData(metadata.constructor) as IController;
+function createParamMapping(
+  targetFunction,
+  propertyKey: string,
+  parameterIndex: number,
+  callback: any,
+) {
+  const metaClass = ControllerFactory.getMetaClassData(targetFunction.constructor) as IController;
   const uniqueKey = `${metaClass.name}.${propertyKey}.${parameterIndex}`;
   Object.assign(metaClass, {
     params: {
@@ -82,13 +87,13 @@ function loadRouter(app: Application) {
 }
 
 function createFunctionMapping(method: EMethod, path: string, middlewares?: IMiddleware[]) {
-  return (metadata, propertyKey: string) => {
+  return (targetFunction, propertyKey: string) => {
     // metadata
-    const metaClass: IController = ControllerFactory.getMetaClassData(metadata.constructor);
+    const metaClass: IController = ControllerFactory.getMetaClassData(targetFunction.constructor);
 
     const uniqueKey = `${metaClass.name}.${propertyKey}`;
 
-    const callback = createCallback(metadata, propertyKey, uniqueKey);
+    const callback = createCallback(targetFunction, propertyKey, uniqueKey);
 
     const routeOptions: IRouteOptions = Object.assign(defaultRouteOptions, {
       uniqueKey,
@@ -107,19 +112,19 @@ function createFunctionMapping(method: EMethod, path: string, middlewares?: IMid
   };
 }
 
-function createCallback(metadata, propertyKey: string, uniqueKey: string) {
+function createCallback(targetFunction, propertyKey: string, uniqueKey: string) {
   return (req, res, next) => {
-    const metaClass = ControllerFactory.getMetaClassData(metadata.constructor) as IController;
-    const metaFunc = metadata[propertyKey];
+    const metaClass = ControllerFactory.getMetaClassData(targetFunction.constructor) as IController;
+    const metaFunc = targetFunction[propertyKey];
 
-    const args = requestHandleParams(metadata, propertyKey, uniqueKey, req, res, next);
+    const args = requestHandleParams(targetFunction, propertyKey, uniqueKey, req, res, next);
     const result = metaFunc.apply(metaClass.constructor, [...args]);
     responseHandle(res, result);
   };
 }
 
 function requestHandleParams(
-  metadata: any,
+  targetFunction: any,
   propertyKey: string,
   uniqueKey: string,
   req: Request,
@@ -127,8 +132,8 @@ function requestHandleParams(
   next: NextFunction,
 ): any[] {
   const args = [req, res, next];
-  const metaClass = ControllerFactory.getMetaClassData(metadata.constructor) as IController;
-  const metaFunc = metadata[propertyKey];
+  const metaClass = ControllerFactory.getMetaClassData(targetFunction.constructor) as IController;
+  const metaFunc = targetFunction[propertyKey];
   const paramsCount = metaFunc.length;
 
   for (let i = 0; i < paramsCount; i++) {
@@ -149,18 +154,18 @@ function responseHandle(res: Response, result: any) {
 }
 
 function before(decoratorClass: any, method?: string) {
-  return (metadata: any, propertyKey: string) => {
+  return (targetClass: any, propertyKey: string) => {
     const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
       decoratorClass,
     );
     const uniqueKey = `${name}.${method}`;
 
-    const beforeAction = metadata[propertyKey];
+    const beforeAction = targetClass[propertyKey];
     const originMethod = metaClass[method];
 
     const decoratorMethod = (req: Request, res: Response, next: NextFunction) => {
       const args = requestHandleParams(metaClass, method, uniqueKey, req, res, next);
-      beforeAction.apply(metadata, args);
+      beforeAction.apply(targetClass, args);
       const result = originMethod.apply(metaClass, args);
       responseHandle(res, result);
     };
@@ -178,19 +183,19 @@ function before(decoratorClass: any, method?: string) {
 }
 
 function after(decoratorClass: any, method?: string) {
-  return (metadata: any, propertyKey: string) => {
+  return (targetClass: any, propertyKey: string) => {
     const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
       decoratorClass,
     );
     const uniqueKey = `${name}.${method}`;
 
-    const afterAction = metadata[propertyKey];
+    const afterAction = targetClass[propertyKey];
     const originMethod = metaClass[method];
 
     const decoratorMethod = (req: Request, res: Response, next: NextFunction) => {
       const args = requestHandleParams(metaClass, method, uniqueKey, req, res, next);
       const result = originMethod.apply(metaClass, args);
-      afterAction.apply(metadata, args);
+      afterAction.apply(targetClass, args);
       responseHandle(res, result);
     };
 
