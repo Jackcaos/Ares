@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as cookieParser from "cookie-parser";
 import * as expressSession from "express-session";
-import { ICookie, ISession } from "../interface/IConfig";
+import { ICookie, ISession } from "../interface/config";
 import { Config, Provide } from "../index";
 import { loadRouter } from "./route-mapping.decorator";
 import { ServerFactory } from "../factory/server-factory.class";

@@ -1,9 +1,4 @@
-import { IController } from "../interface/server";
-
-type ctrKeys = keyof IController;
-
-export default class ControllerFactory {
-  private static controllerMapper: Map<string, any> = new Map<string, any>();
+export default class MetaManager {
   private static metaDataMap: Map<string, Map<string, any>> = new Map<string, any>();
 
   public static putMetaClassData(
@@ -30,7 +25,7 @@ export default class ControllerFactory {
     this.metaDataMap.get(namespace).set(key, data);
   }
 
-  public static putMetaMethodData(
+  public static putMetaData(
     namespace: string,
     key: string,
     data: { [key: string]: any },
@@ -50,15 +45,5 @@ export default class ControllerFactory {
 
   public static getMetaDataByNameSpace(namespace: string) {
     return this.metaDataMap.get(namespace);
-  }
-
-  public static getMetaClassData(mappingClass) {
-    const previousData = this.controllerMapper.get(mappingClass.name);
-    if (previousData === undefined) {
-      this.controllerMapper.set(mappingClass.name, {
-        name: mappingClass.name,
-      });
-    }
-    return this.controllerMapper.get(mappingClass.name);
   }
 }

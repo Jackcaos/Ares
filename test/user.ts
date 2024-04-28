@@ -3,7 +3,7 @@ import { Inject, Config } from "../src";
 import Logger from "../src/factory/log-factory.class";
 import { Get, reqQuery } from "../src/web/route-mapping.decorator";
 import { Controller } from "../src";
-import { IServerConfig } from "../src/interface/IConfig";
+import { IServerConfig } from "../src/interface/config";
 
 @Controller("/user")
 export default class User {

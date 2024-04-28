@@ -8,5 +8,4 @@ export const INJECT_METHOD_KEY = "inject:method";
 export const INJECT_PARAMS_KEY = "inject:param";
 
 export const COMMON_METHOD = "common:method";
-
-export const AOP_METHOD = "aop:method";
+export const CONFIG = "config";

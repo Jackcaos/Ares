@@ -1,7 +1,7 @@
 import * as walkSync from "walk-sync";
 import * as fs from "fs";
-
-let globalConfig = {};
+import MetaManager from "./meta-manager.class";
+import { CONFIG } from "./common/constants";
 
 function App<T extends { new (...args: any[]): {} }>(constructor: T) {
   const srcDir = process.cwd() + "/src";
@@ -29,21 +29,16 @@ function App<T extends { new (...args: any[]): {} }>(constructor: T) {
 function importConfig() {
   const configPath = process.cwd() + "/test/config/config.default.json";
   if (fs.existsSync(configPath)) {
-    globalConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     const nodeEnv = process.env.NODE_ENV;
     if (nodeEnv) {
       const envConfigFile = process.cwd() + "/test/config/config-" + nodeEnv + ".json";
       if (fs.existsSync(envConfigFile)) {
-        globalConfig = Object.assign(
-          globalConfig,
-          JSON.parse(fs.readFileSync(envConfigFile, "utf-8")),
-        );
+        Object.assign(config, JSON.parse(fs.readFileSync(envConfigFile, "utf-8")));
       }
     }
+    MetaManager.putMetaData(CONFIG, "project", config);
   }
 }
-function getGlobalConfig() {
-  return globalConfig;
-}
 
-export { App, getGlobalConfig };
+export { App };

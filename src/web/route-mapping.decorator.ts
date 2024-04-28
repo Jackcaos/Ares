@@ -1,7 +1,7 @@
 import { Application, Request, Response, NextFunction } from "express";
-import { AOP_METHOD, CONTROLLER_KEY, ROUTER_KEY, ROUTER_PARAMS_KEY } from "../common/constants";
-import ControllerFactory from "../factory/controller-factory.class";
-import { EMethod, IRouteOptions, IController, IMiddleware } from "../interface/server";
+import { CONTROLLER_KEY, ROUTER_KEY, ROUTER_PARAMS_KEY } from "../common/constants";
+import MetaManager from "../meta-manager.class";
+import { EMethod, IRouteOptions, IMiddleware } from "../interface/server";
 
 const defaultRouteOptions: Partial<IRouteOptions> = {
   path: "/",
@@ -65,15 +65,15 @@ function createParamMapping(
 ) {
   const instance = targetFunction.constructor;
   const uniqueKey = `${instance.name}_${propertyKey}_${parameterIndex}`;
-  ControllerFactory.putMetaMethodData(ROUTER_PARAMS_KEY, uniqueKey, { callback });
+  MetaManager.putMetaData(ROUTER_PARAMS_KEY, uniqueKey, { callback });
 }
 
 function loadRouter(app: Application) {
-  // const allController = ControllerFactory.getMetaDataByNameSpace(CONTROLLER_KEY);
-  const allRouter = ControllerFactory.getMetaDataByNameSpace(ROUTER_KEY);
+  // const allController = MetaManager.getMetaDataByNameSpace(CONTROLLER_KEY);
+  const allRouter = MetaManager.getMetaDataByNameSpace(ROUTER_KEY);
   for (const [uniqueKey, data] of allRouter) {
     const [className, methodName] = uniqueKey.split("_");
-    let { prefix } = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, className);
+    let { prefix } = MetaManager.getMetaDataByKey(CONTROLLER_KEY, className);
     prefix = prefix === "/" ? "" : prefix;
     const { method, path, callback } = data;
     const realPath = prefix + path;
@@ -98,13 +98,13 @@ function createFunctionMapping(method: EMethod, path: string, middlewares?: IMid
       middlewares,
     });
 
-    ControllerFactory.putMetaMethodData(ROUTER_KEY, uniqueKey, routerData);
+    MetaManager.putMetaData(ROUTER_KEY, uniqueKey, routerData);
   };
 }
 
 function createCallback(targetFunction, propertyKey: string, uniqueKey: string) {
   return (req, res, next) => {
-    const targetClass = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, targetFunction.constructor.name);
+    const targetClass = MetaManager.getMetaDataByKey(CONTROLLER_KEY, targetFunction.constructor.name);
     const metaFunc = targetFunction[propertyKey];
 
     const args = requestHandleParams(targetFunction, propertyKey, uniqueKey, req, res, next);
@@ -128,7 +128,7 @@ function requestHandleParams(
 
   for (let i = 0; i < paramsCount; i++) {
     const key = `${uniqueKey}_${i}`;
-    const metaData = ControllerFactory.getMetaDataByKey(ROUTER_PARAMS_KEY, key);
+    const metaData = MetaManager.getMetaDataByKey(ROUTER_PARAMS_KEY, key);
     // eslint-disable-next-line prettier/prettier
     if (metaData?.callback) {
       console.log('metaData.callback(req, res, next)', metaData.callback);
@@ -148,14 +148,14 @@ function responseHandle(res: Response, result: any) {
 
 function before(decoratedClass: any, method?: string) {
   return (targetClass: any, propertyKey: string) => {
-    const originalClass = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, decoratedClass.name);
+    const originalClass = MetaManager.getMetaDataByKey(CONTROLLER_KEY, decoratedClass.name);
 
     const uniqueKey = `${decoratedClass.name}_${method}`;
-    const originalMethod = ControllerFactory.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
+    const originalMethod = MetaManager.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
 
     const beforeAction = targetClass[propertyKey];
 
-    ControllerFactory.putMetaMethodData(ROUTER_KEY, uniqueKey, {
+    MetaManager.putMetaData(ROUTER_KEY, uniqueKey, {
       callback: (req: Request, res: Response, next: NextFunction) => {
         const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
         beforeAction.apply(targetClass, args);
@@ -169,14 +169,14 @@ function before(decoratedClass: any, method?: string) {
 
 function after(decoratedClass: any, method?: string) {
   return (targetClass: any, propertyKey: string) => {
-    const originalClass = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, decoratedClass.name);
+    const originalClass = MetaManager.getMetaDataByKey(CONTROLLER_KEY, decoratedClass.name);
 
     const uniqueKey = `${decoratedClass.name}_${method}`;
-    const originalMethod = ControllerFactory.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
+    const originalMethod = MetaManager.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
 
     const afterAction = targetClass[propertyKey];
 
-    ControllerFactory.putMetaMethodData(ROUTER_KEY, uniqueKey, {
+    MetaManager.putMetaData(ROUTER_KEY, uniqueKey, {
       callback: (req: Request, res: Response, next: NextFunction) => {
         const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
         const result = originalMethod.apply(originalClass.target, args);
