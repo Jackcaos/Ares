@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { App, getGlobalConfig } from "./app.decorator";
 import LogFactory from "./factory/log-factory.class";
-import ClassFactory from "./factory/class-factory.class";
 import ControllerFactory from "./factory/controller-factory.class";
+import { COMMON_METHOD, CONTROLLER_KEY } from "./common/constants";
 
 function onClass<T extends { new (...args: any[]): {} }>(constructor: T) {
   return class extends constructor {
@@ -14,9 +14,11 @@ function onClass<T extends { new (...args: any[]): {} }>(constructor: T) {
 
 function Inject(target: any, propertyName: string) {
   const type = Reflect.getMetadata("design:type", target, propertyName);
-  Object.defineProperty(target, propertyName, {
+  const uniqueKey = type.name;
+
+  Reflect.defineProperty(target, propertyName, {
     get: function injectClass() {
-      const originalClass = ClassFactory.getMetaFunctionData(type);
+      const originalClass = ControllerFactory.getMetaDataByKey(COMMON_METHOD, uniqueKey).target;
       return originalClass();
     },
   });
@@ -24,13 +26,18 @@ function Inject(target: any, propertyName: string) {
 
 function Provide(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
   const returnType = Reflect.getMetadata("design:returntype", target, propertyName);
-  ClassFactory.putMetaFunctionData(returnType, target[propertyName]);
+  const uniqueKey = returnType.name;
+
+  ControllerFactory.putMetaMethodData(COMMON_METHOD, uniqueKey, {
+    target: target[propertyName],
+  });
 }
 
 function Controller(prefix = "/", middlewares?: any[]) {
   return (target: any) => {
-    ControllerFactory.putMetaClassData(target, {
-      targetClass: new target(),
+    ControllerFactory.putMetaClassData(CONTROLLER_KEY, target.name, {
+      name: target.name,
+      target,
       prefix,
       middlewares: middlewares ? middlewares : [],
     });
@@ -38,7 +45,7 @@ function Controller(prefix = "/", middlewares?: any[]) {
 }
 
 function Logger(message?: any, ...optionalParams: any[]) {
-  const logBean = ControllerFactory.getMetaClassData(LogFactory);
+  const logBean = ControllerFactory.getMetaDataByKey(COMMON_METHOD, LogFactory.name);
   const logBeanInstance = logBean();
   logBeanInstance.log(message, ...optionalParams);
 }

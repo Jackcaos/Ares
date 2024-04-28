@@ -36,8 +36,6 @@ interface IController {
 }
 
 interface IRouteOptions {
-  // 唯一key
-  uniqueKey: string;
   // 请求方式
   method: EMethod;
   // 请求路径

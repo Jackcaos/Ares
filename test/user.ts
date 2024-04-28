@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Inject, Config, Provide } from "../src";
+import { Inject, Config } from "../src";
 import Logger from "../src/factory/log-factory.class";
 import { Get, reqQuery } from "../src/web/route-mapping.decorator";
 import { Controller } from "../src";
@@ -9,12 +9,13 @@ import { IServerConfig } from "../src/interface/IConfig";
 export default class User {
   @Inject private logger: Logger;
 
-  @Config("server") private serverConfig: IServerConfig;
+  // @Config("server") private serverConfig: IServerConfig;
 
   @Get("/")
   public getUser(req: Request, res: Response, @reqQuery("aaa") aaa: number) {
+    // console.log("this.serverConfig", this.serverConfig);
     this.logger.info("req", ["123123"], req.query, aaa);
-    this.logger.info("serverConfig", this.serverConfig.port);
+    // this.logger.info("serverConfig", this.serverConfig.port);
     res.cookie("name", "zzz");
     return "hello world";
   }

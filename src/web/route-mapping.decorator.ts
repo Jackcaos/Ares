@@ -1,4 +1,5 @@
 import { Application, Request, Response, NextFunction } from "express";
+import { AOP_METHOD, CONTROLLER_KEY, ROUTER_KEY, ROUTER_PARAMS_KEY } from "../common/constants";
 import ControllerFactory from "../factory/controller-factory.class";
 import { EMethod, IRouteOptions, IController, IMiddleware } from "../interface/server";
 
@@ -62,63 +63,52 @@ function createParamMapping(
   parameterIndex: number,
   callback: any,
 ) {
-  const metaClass = ControllerFactory.getMetaClassData(targetFunction.constructor) as IController;
-  const uniqueKey = `${metaClass.name}.${propertyKey}.${parameterIndex}`;
-  Object.assign(metaClass, {
-    params: {
-      [uniqueKey]: callback,
-    },
-  });
+  const instance = targetFunction.constructor;
+  const uniqueKey = `${instance.name}_${propertyKey}_${parameterIndex}`;
+  ControllerFactory.putMetaMethodData(ROUTER_PARAMS_KEY, uniqueKey, { callback });
 }
 
 function loadRouter(app: Application) {
-  const allMetaClassData = ControllerFactory.getAllMetaClassData();
-  for (const [, val] of allMetaClassData) {
-    const prefix = val.prefix === "/" ? "" : val.prefix;
-    const routers = val.router;
-    for (const key in routers) {
-      const { method, path, callback } = routers[key];
-      const realPath = prefix + path;
-      app[method](realPath, (req: Request, res: Response, next: NextFunction) => {
-        callback(req, res, next);
-      });
-    }
+  // const allController = ControllerFactory.getMetaDataByNameSpace(CONTROLLER_KEY);
+  const allRouter = ControllerFactory.getMetaDataByNameSpace(ROUTER_KEY);
+  for (const [uniqueKey, data] of allRouter) {
+    const [className, methodName] = uniqueKey.split("_");
+    let { prefix } = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, className);
+    prefix = prefix === "/" ? "" : prefix;
+    const { method, path, callback } = data;
+    const realPath = prefix + path;
+    app[method](realPath, (req: Request, res: Response, next: NextFunction) => {
+      callback(req, res, next);
+    });
   }
 }
 
 function createFunctionMapping(method: EMethod, path: string, middlewares?: IMiddleware[]) {
   return (targetFunction, propertyKey: string) => {
-    // metadata
-    const metaClass: IController = ControllerFactory.getMetaClassData(targetFunction.constructor);
+    const className = targetFunction.constructor.name;
 
-    const uniqueKey = `${metaClass.name}.${propertyKey}`;
+    const uniqueKey = `${className}_${propertyKey}`;
 
     const callback = createCallback(targetFunction, propertyKey, uniqueKey);
 
-    const routeOptions: IRouteOptions = Object.assign(defaultRouteOptions, {
-      uniqueKey,
+    const routerData: IRouteOptions = Object.assign(defaultRouteOptions, {
       method,
       path,
       callback,
       middlewares,
     });
 
-    Object.assign(metaClass, {
-      router: {
-        ...metaClass.router,
-        [uniqueKey]: { ...routeOptions },
-      },
-    });
+    ControllerFactory.putMetaMethodData(ROUTER_KEY, uniqueKey, routerData);
   };
 }
 
 function createCallback(targetFunction, propertyKey: string, uniqueKey: string) {
   return (req, res, next) => {
-    const metaClass = ControllerFactory.getMetaClassData(targetFunction.constructor) as IController;
+    const targetClass = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, targetFunction.constructor.name);
     const metaFunc = targetFunction[propertyKey];
 
     const args = requestHandleParams(targetFunction, propertyKey, uniqueKey, req, res, next);
-    const result = metaFunc.apply(metaClass.constructor, [...args]);
+    const result = metaFunc.apply(targetClass.target, [...args]);
     responseHandle(res, result);
   };
 }
@@ -131,15 +121,18 @@ function requestHandleParams(
   res: Response,
   next: NextFunction,
 ): any[] {
+  console.log('targetFunction', targetFunction.constructor);
   const args = [req, res, next];
-  const metaClass = ControllerFactory.getMetaClassData(targetFunction.constructor) as IController;
   const metaFunc = targetFunction[propertyKey];
   const paramsCount = metaFunc.length;
 
   for (let i = 0; i < paramsCount; i++) {
-    const key = `${uniqueKey}.${i}`;
-    if (metaClass.params[key]) {
-      args[i] = metaClass.params[key](req, res, next);
+    const key = `${uniqueKey}_${i}`;
+    const metaData = ControllerFactory.getMetaDataByKey(ROUTER_PARAMS_KEY, key);
+    // eslint-disable-next-line prettier/prettier
+    if (metaData?.callback) {
+      console.log('metaData.callback(req, res, next)', metaData.callback);
+      args[i] = metaData.callback(req, res, next);
     }
   }
   return args;
@@ -155,59 +148,42 @@ function responseHandle(res: Response, result: any) {
 
 function before(decoratedClass: any, method?: string) {
   return (targetClass: any, propertyKey: string) => {
-    const { targetClass: metaClass, name, router } = ControllerFactory.getMetaClassData(
-      decoratedClass,
-    );
-    const uniqueKey = `${name}.${method}`;
+    const originalClass = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, decoratedClass.name);
+
+    const uniqueKey = `${decoratedClass.name}_${method}`;
+    const originalMethod = ControllerFactory.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
 
     const beforeAction = targetClass[propertyKey];
-    const originMethod = metaClass[method];
 
-    const decoratorMethod = (req: Request, res: Response, next: NextFunction) => {
-      const args = requestHandleParams(metaClass, method, uniqueKey, req, res, next);
-      beforeAction.apply(targetClass, args);
-      const result = originMethod.apply(metaClass, args);
-      responseHandle(res, result);
-    };
+    ControllerFactory.putMetaMethodData(ROUTER_KEY, uniqueKey, {
+      callback: (req: Request, res: Response, next: NextFunction) => {
+        const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
+        beforeAction.apply(targetClass, args);
+        const result = originalMethod.apply(originalClass.target, args);
+        responseHandle(res, result);
+      }
+    }, true);
 
-    router[uniqueKey].callback = decoratorMethod;
-
-    Object.assign(metaClass, {
-      router: {
-        ...metaClass.router,
-        // fixme 改成递归的方式
-        ...router[uniqueKey],
-      },
-    });
   };
 }
 
 function after(decoratedClass: any, method?: string) {
   return (targetClass: any, propertyKey: string) => {
-    const { constructor: metaClass, name, router } = ControllerFactory.getMetaClassData(
-      decoratedClass,
-    );
-    const uniqueKey = `${name}.${method}`;
+    const originalClass = ControllerFactory.getMetaDataByKey(CONTROLLER_KEY, decoratedClass.name);
+
+    const uniqueKey = `${decoratedClass.name}_${method}`;
+    const originalMethod = ControllerFactory.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
 
     const afterAction = targetClass[propertyKey];
-    const originMethod = metaClass[method];
 
-    const decoratorMethod = (req: Request, res: Response, next: NextFunction) => {
-      const args = requestHandleParams(metaClass, method, uniqueKey, req, res, next);
-      const result = originMethod.apply(metaClass, args);
-      afterAction.apply(targetClass, args);
-      responseHandle(res, result);
-    };
-
-    router[uniqueKey].callback = decoratorMethod;
-
-    Object.assign(metaClass, {
-      router: {
-        ...metaClass.router,
-        // fixme 改成递归的方式
-        ...router[uniqueKey],
-      },
-    });
+    ControllerFactory.putMetaMethodData(ROUTER_KEY, uniqueKey, {
+      callback: (req: Request, res: Response, next: NextFunction) => {
+        const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
+        const result = originalMethod.apply(originalClass.target, args);
+        afterAction.apply(targetClass, args);
+        responseHandle(res, result);
+      }
+    }, true);
   };
 }
 

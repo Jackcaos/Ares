@@ -3,6 +3,7 @@ export default class ClassFactory {
 
   public static putMetaFunctionData(mappingFunction: Function, originalFunction: Function) {
     this.functionMapper.set(mappingFunction.name, originalFunction);
+    console.log("this.functionMapper", this.functionMapper);
   }
 
   public static getMetaFunctionData(mappingFunction: Function) {
