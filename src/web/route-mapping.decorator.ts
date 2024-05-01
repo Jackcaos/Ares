@@ -174,13 +174,13 @@ function after(decoratedClass: any, method?: string) {
     const uniqueKey = `${decoratedClass.name}_${method}`;
     const originalMethod = MetaManager.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
 
-    const afterAction = targetClass[propertyKey];
+    // const afterAction = targetClass[propertyKey];
 
     MetaManager.putMetaData(ROUTER_KEY, uniqueKey, {
       callback: (req: Request, res: Response, next: NextFunction) => {
         const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
         const result = originalMethod.apply(originalClass.target, args);
-        afterAction.apply(targetClass, args);
+        // afterAction.apply(targetClass, args);
         responseHandle(res, result);
       }
     }, true);

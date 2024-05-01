@@ -15,7 +15,6 @@ function onClass<T extends { new (...args: any[]): {} }>(constructor: T) {
 function Inject(target: any, propertyName: string) {
   const type = Reflect.getMetadata("design:type", target, propertyName);
   const uniqueKey = type.name;
-
   Reflect.defineProperty(target, propertyName, {
     get: function injectClass() {
       const originalClass = MetaManager.getMetaDataByKey(COMMON_METHOD, uniqueKey).target;
