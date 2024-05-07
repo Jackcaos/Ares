@@ -9,6 +9,7 @@ const defaultRouteOptions: Partial<IRouteOptions> = {
   middlewares: [],
 };
 
+
 function Get(path: string) {
   return createFunctionMapping(EMethod.GET, path);
 }
@@ -77,8 +78,8 @@ function loadRouter(app: Application) {
     prefix = prefix === "/" ? "" : prefix;
     const { method, path, callback } = data;
     const realPath = prefix + path;
-    app[method](realPath, (req: Request, res: Response, next: NextFunction) => {
-      callback(req, res, next);
+    app[method](realPath, async (req: Request, res: Response, next: NextFunction) => {
+      await callback(req, res, next);
     });
   }
 }
@@ -103,24 +104,24 @@ function createFunctionMapping(method: EMethod, path: string, middlewares?: IMid
 }
 
 function createCallback(targetFunction, propertyKey: string, uniqueKey: string) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const targetClass = MetaManager.getMetaDataByKey(CONTROLLER_KEY, targetFunction.constructor.name);
     const metaFunc = targetFunction[propertyKey];
 
-    const args = requestHandleParams(targetFunction, propertyKey, uniqueKey, req, res, next);
-    const result = metaFunc.apply(targetClass.target, [...args]);
+    const args = await requestHandleParams(targetFunction, propertyKey, uniqueKey, req, res, next);
+    const result = await metaFunc.apply(targetClass.target, [...args]);
     responseHandle(res, result);
   };
 }
 
-function requestHandleParams(
+async function requestHandleParams(
   targetFunction: any,
   propertyKey: string,
   uniqueKey: string,
   req: Request,
   res: Response,
   next: NextFunction,
-): any[] {
+) {
   console.log('targetFunction', targetFunction.constructor);
   const args = [req, res, next];
   const metaFunc = targetFunction[propertyKey];
@@ -132,7 +133,7 @@ function requestHandleParams(
     // eslint-disable-next-line prettier/prettier
     if (metaData?.callback) {
       console.log('metaData.callback(req, res, next)', metaData.callback);
-      args[i] = metaData.callback(req, res, next);
+      args[i] = await metaData.callback(req, res, next);
     }
   }
   return args;
@@ -156,11 +157,10 @@ function before(decoratedClass: any, method?: string) {
     const beforeAction = targetClass[propertyKey];
 
     MetaManager.putMetaData(ROUTER_KEY, uniqueKey, {
-      callback: (req: Request, res: Response, next: NextFunction) => {
-        const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
-        beforeAction.apply(targetClass, args);
-        const result = originalMethod.apply(originalClass.target, args);
-        responseHandle(res, result);
+      callback: async (req: Request, res: Response, next: NextFunction) => {
+        const args = await requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
+        await beforeAction.apply(targetClass, args);
+        await originalMethod.apply(originalClass.target, args);
       }
     }, true);
 
@@ -174,14 +174,13 @@ function after(decoratedClass: any, method?: string) {
     const uniqueKey = `${decoratedClass.name}_${method}`;
     const originalMethod = MetaManager.getMetaDataByKey(ROUTER_KEY, uniqueKey).callback;
 
-    // const afterAction = targetClass[propertyKey];
+    const afterAction = targetClass[propertyKey];
 
     MetaManager.putMetaData(ROUTER_KEY, uniqueKey, {
-      callback: (req: Request, res: Response, next: NextFunction) => {
-        const args = requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
-        const result = originalMethod.apply(originalClass.target, args);
-        // afterAction.apply(targetClass, args);
-        responseHandle(res, result);
+      callback: async (req: Request, res: Response, next: NextFunction) => {
+        const args = await requestHandleParams(originalClass.target, method, uniqueKey, req, res, next);
+        await originalMethod.apply(originalClass.target, args);
+        await afterAction.apply(targetClass, args);
       }
     }, true);
   };
@@ -189,6 +188,10 @@ function after(decoratedClass: any, method?: string) {
 
 export {
   loadRouter,
+  createParamMapping
+}
+
+export {
   Get,
   Post,
   Put,

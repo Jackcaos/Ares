@@ -14,5 +14,10 @@
       "maxAge": 7200000,
       "httpOnly": true
     }
+  },
+  "jwt": {
+    "secret": "shhhhhhared-secret",
+    "algorithms": ["HS256"],
+    "ignore": ["/user/login"]
   }
 }

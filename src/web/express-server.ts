@@ -2,9 +2,10 @@ import * as express from "express";
 import * as cookieParser from "cookie-parser";
 import * as expressSession from "express-session";
 import { ICookie, ISession } from "../interface/config";
-import { Config, Provide } from "../index";
+import { Config, Provide, Inject } from "../index";
 import { loadRouter } from "./route-mapping.decorator";
 import { ServerFactory } from "../factory/server-factory.class";
+import AuthenticationFactory from "../factory/authentication-factory.class";
 
 export default class ExpressServer extends ServerFactory {
   public static customMiddleware = [];
@@ -12,6 +13,8 @@ export default class ExpressServer extends ServerFactory {
   @Config("cookie") private cookie: ICookie | undefined;
 
   @Config("session") private session: ISession | undefined;
+
+  @Inject public authentication: AuthenticationFactory;
 
   @Provide
   public getServer(): ServerFactory {
@@ -42,11 +45,20 @@ export default class ExpressServer extends ServerFactory {
     this.setDefaultMiddleware();
     const middlewareLists = this.defaultMiddleware.concat(ExpressServer.customMiddleware);
 
+    // 前置拦截器
+    // console.log("authentication", this.authentication);
+    app.use((req, res, next) => {
+      this.authentication.preHandle.apply(this.authentication, [req, res, next]);
+    });
+
     middlewareLists.forEach((middleware) => {
       app.use(middleware);
     });
 
     loadRouter(app);
+
+    // 后置拦截器
+    app.use(this.authentication.afterCompletion);
 
     app.listen(port, () => {
       console.log("server start at port " + port);

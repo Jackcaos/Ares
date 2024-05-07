@@ -205,6 +205,13 @@
   resolved "http://registry.m.jd.com/@types/minimatch/download/@types/minimatch-3.0.5.tgz"
   integrity sha1-EAHMXmo3BLg8I2An538vWOoBD0A=
 
+"@types/multiparty@^0.0.34":
+  version "0.0.34"
+  resolved "http://registry.m.jd.com/@types/multiparty/download/@types/multiparty-0.0.34.tgz#2558e021eb8e04852cbf24a086f0b2215b276922"
+  integrity sha1-JVjgIeuOBIUsvySghvCyIVsnaSI=
+  dependencies:
+    "@types/node" "*"
+
 "@types/node@*", "@types/node@^18.0.6":
   version "18.19.31"
   resolved "http://registry.m.jd.com/@types/node/download/@types/node-18.19.31.tgz"
