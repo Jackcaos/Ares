@@ -25,8 +25,9 @@ class jwtAuthentication extends AuthenticationFactory {
       const jwtMiddleware = expressjwt(this.jwtConfig);
       jwtMiddleware(req, res, (err) => {
         if (err) {
-          next(err);
+          return next(err);
         }
+        // checkUser TODO
       });
     }
     next();
