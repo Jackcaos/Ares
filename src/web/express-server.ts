@@ -46,7 +46,6 @@ export default class ExpressServer extends ServerFactory {
     const middlewareLists = this.defaultMiddleware.concat(ExpressServer.customMiddleware);
 
     // 前置拦截器
-    // console.log("authentication", this.authentication);
     app.use((req, res, next) => {
       this.authentication.preHandle.apply(this.authentication, [req, res, next]);
     });
@@ -58,7 +57,9 @@ export default class ExpressServer extends ServerFactory {
     loadRouter(app);
 
     // 后置拦截器
-    app.use(this.authentication.afterCompletion);
+    app.use((req, res, next) => {
+      this.authentication.afterCompletion.apply(this.authentication, [req, res, next]);
+    });
 
     app.listen(port, () => {
       console.log("server start at port " + port);
