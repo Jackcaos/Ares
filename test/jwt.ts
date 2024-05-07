@@ -19,13 +19,17 @@ class jwtAuthentication extends AuthenticationFactory {
     return new jwtAuthentication();
   }
 
-  public preHandle(req: Request, res: Response, next: NextFunction): void {
+  public async preHandle(req: Request, res: Response, next: NextFunction): Promise<void> {
     console.log("this.jwtConfig", this.jwtConfig);
     if (!this.jwtConfig.ignore.includes(req.path)) {
       const jwtMiddleware = expressjwt(this.jwtConfig);
       jwtMiddleware(req, res, (err) => {
         if (err) {
-          return next(err);
+          next(err);
+          return res.send({
+            code: 401,
+            err: "权限未认证",
+          });
         }
         // checkUser TODO
       });

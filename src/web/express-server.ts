@@ -46,7 +46,7 @@ export default class ExpressServer extends ServerFactory {
     const middlewareLists = this.defaultMiddleware.concat(ExpressServer.customMiddleware);
 
     // 前置拦截器
-    app.use((req, res, next) => {
+    app.use(async (req, res, next) => {
       this.authentication.preHandle.apply(this.authentication, [req, res, next]);
     });
 
